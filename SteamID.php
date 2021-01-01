@@ -108,19 +108,14 @@ class SteamID
 	const VanityGroup      = 2;
 	const VanityGameGroup  = 3;
 
-	/**
-	 * @var \GMP
-	 */
-	private $Data;
+	private \GMP $Data;
 
 	/**
 	 * Initializes a new instance of the SteamID class.
 	 *
 	 * It automatically guesses which type the input is, and works from there.
-	 *
-	 * @param int|string|null $Value
 	 */
-	public function __construct( $Value = null )
+	public function __construct( int|string|null $Value = null )
 	{
 		$this->Data = gmp_init( 0 );
 
@@ -542,7 +537,7 @@ class SteamID
 	 *
 	 * @throws InvalidArgumentException
 	 */
-	public function SetFromUInt64( $Value ) : SteamID
+	public function SetFromUInt64( int|string $Value ) : SteamID
 	{
 		if( self::IsNumeric( $Value ) )
 		{
@@ -576,9 +571,9 @@ class SteamID
 	 *
 	 * @throws InvalidArgumentException
 	 */
-	public function SetFromCsgoFriendCode( $Value ) : SteamID
+	public function SetFromCsgoFriendCode( string $Value ) : SteamID
 	{
-		if( !is_string( $Value ) || strlen( $Value ) !== 10 || $Value[ 5 ] !== '-' )
+		if( strlen( $Value ) !== 10 || $Value[ 5 ] !== '-' )
 		{
 			throw new InvalidArgumentException( 'Given input is not a valid CS:GO friend code.' );
 		}
@@ -614,7 +609,7 @@ class SteamID
 			$AccountId = gmp_or( self::ShiftLeft( $AccountId, 4 ), $IdNibble );
 		}
 
-		$this->SetAccountID( $AccountId );
+		$this->SetAccountID( (int)$AccountId );
 		$this->SetAccountType( self::TypeIndividual );
 		$this->SetAccountUniverse( self::UniversePublic );
 		$this->SetAccountInstance( 1 );
@@ -669,7 +664,7 @@ class SteamID
 	 *
 	 * @return SteamID Fluent interface
 	 */
-	public function SetAccountID( $Value ) : SteamID
+	public function SetAccountID( int|string $Value ) : SteamID
 	{
 		if( $Value < 0 || $Value > 0xFFFFFFFF )
 		{
@@ -726,7 +721,7 @@ class SteamID
 	 *
 	 * @return SteamID Fluent interface
 	 */
-	public function SetAccountUniverse( $Value ) : SteamID
+	public function SetAccountUniverse( int $Value ) : SteamID
 	{
 		if( $Value < 0 || $Value > 0xFF )
 		{
@@ -738,25 +733,12 @@ class SteamID
 		return $this;
 	}
 
-	/**
-	 * @param int $BitOffset
-	 * @param int|string $ValueMask
-	 *
-	 * @return \GMP
-	 */
-	private function Get( int $BitOffset, $ValueMask ) : \GMP
+	private function Get( int $BitOffset, int|string $ValueMask ) : \GMP
 	{
 		return gmp_and( self::ShiftRight( $this->Data, $BitOffset ), $ValueMask );
 	}
 
-	/**
-	 * @param int $BitOffset
-	 * @param int|string $ValueMask
-	 * @param int|string $Value
-	 *
-	 * @return void
-	 */
-	private function Set( int $BitOffset, $ValueMask, $Value ) : void
+	private function Set( int $BitOffset, int|string $ValueMask, int|string $Value ) : void
 	{
 		$this->Data = gmp_or(
 			gmp_and( $this->Data, gmp_com( self::ShiftLeft( $ValueMask, $BitOffset ) ) ),
@@ -766,40 +748,31 @@ class SteamID
 
 	/**
 	 * Shift the bits of $x by $n steps to the left
-	 *
-	 * @param int|string|\GMP $x
-	 * @param int $n
-	 *
-	 * @return \GMP
 	 */
-	private static function ShiftLeft( $x, int $n ) : \GMP
+	private static function ShiftLeft( int|string|\GMP $x, int $n ) : \GMP
 	{
 		return gmp_mul( $x, gmp_pow( 2, $n ) );
 	}
 
 	/**
 	 * Shift the bits of $x by $n steps to the right
-	 *
-	 * @param int|string|\GMP $x
-	 * @param int $n
-	 *
-	 * @return \GMP
 	 */
-	private static function ShiftRight( $x, int $n ) : \GMP
+	private static function ShiftRight( int|string|\GMP $x, int $n ) : \GMP
 	{
 		return gmp_div_q( $x, gmp_pow( 2, $n ) );
 	}
 
 	/**
 	 * This is way more restrictive than php's is_numeric()
-	 *
-	 * @param int|string $n
-	 *
-	 * @return bool
 	 */
-	private static function IsNumeric( $n ) : bool
+	private static function IsNumeric( int|string $n ) : bool
 	{
-		return preg_match( '/^[1-9][0-9]{0,19}$/', (string)$n ) === 1;
+		if( is_int( $n ) )
+		{
+			return $n > 0;
+		}
+
+		return preg_match( '/^[1-9][0-9]{0,19}$/', $n ) === 1;
 	}
 
 	public function __toString() : string
